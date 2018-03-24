@@ -1,0 +1,112 @@
+两个废寝忘食的晚上，终于，终于A掉了这道线段树初步（区间修改求和）
+第一个晚上
+lazy_tag这个被赋予线段树精髓的lag真的有点随便，只要存下这个标记，管他什么时候更新（例外，当pushup当前区间值时，
+因为涉及到tree[root*2].id+tree[root*2+1].id,所以必须将其二pushdown）。当访问该点有事没事pushdown一下，多多益善，
+更新时，求和时......
+第二个晚上
+看网上关于线段树初步都是数组开4倍，偏偏我要开八倍才能AC，本可以拿了100就继续刷其他题目,但是追求完美的本宝宝还是看了整整一小时，
+把他给调成了四倍。原因在于当叶子结点pushdown时，无需继续下传，只要改完叶子就行了。无独有偶，pushup时也要判断是都是叶子结点，
+否则最后叶子都是0，线段树也都是0。
+代码如下：
+#include<bits/stdc++.h>
+using namespace std;
+long long n,m;
+long long num;
+long long x,y,z;
+long long a[100010];
+struct tt
+{
+  long long left;
+  long long right;
+  long long id;	
+  long long lazy_tag; 
+};
+tt tree[400004];
+inline void pu(long long len)
+{
+	if (tree[len].left!=tree[len].right) tree[len].id = tree[2 * len].id + tree[2 * len + 1].id ;
+}
+
+void pushdown(long long root)
+{
+	if (tree[root].lazy_tag!=0)
+	{
+		if (tree[root].left!=tree[root].right) 
+		{
+		tree[root*2].lazy_tag+=tree[root].lazy_tag;
+		tree[root*2+1].lazy_tag+=tree[root].lazy_tag;
+	}
+		tree[root].id+=tree[root].lazy_tag*(tree[root].right-tree[root].left+1);
+//更新节点的值 
+		tree[root].lazy_tag=0;
+	}
+	
+}
+inline void update(long long len,long long nl,long long nr,long long d)
+{
+	if ((tree[len].left>=nl)&&(tree[len].right<=nr))
+	{
+		tree[len].lazy_tag+=d;
+		return;
+	}
+    pushdown(len);
+	if (tree[2*len].right>=nr) {
+	update(2*len,nl,nr,d);}
+	else 
+	if (tree[2*len+1].left<=nl) {
+	update(2*len+1,nl,nr,d);}
+	else
+	{
+	update(len*2,nl,nr,d);
+	update(len*2+1,nl,nr,d);
+    }
+    if (tree[len*2].lazy_tag!=0) pushdown(len*2);
+    if (tree[len*2+1].lazy_tag!=0) pushdown(len*2+1);
+	
+	
+	pu(len);
+
+}
+inline void buildtree(long long l,long long r,long long len)
+{
+	tree[len].left=l;
+	tree[len].right=r;
+	tree[len].lazy_tag=0;
+	if (l==r) tree[len].id=a[l];
+	else
+	{
+		long long mid=(l+r)/2;
+		buildtree(l,mid,len*2);
+		buildtree(mid+1,r,len*2+1);
+		tree[len].id=tree[len*2].id+tree[len*2+1].id;
+	}
+}
+
+long long Sum(long long l,long long r,long long len)
+{
+		pushdown(len); 
+	if ((tree[len].left>r)||(tree[len].right<l)) return 0;
+	if ((tree[len].left>=l)&&(tree[len].right<=r)) return tree[len].id;
+	return Sum(l,r,len*2)+Sum(l,r,len*2+1);
+}
+
+
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin>>n>>m;
+	memset(a,0,sizeof(a));
+	memset(tree,0,sizeof(tree));
+	for (register long long i=1;i<=n;i++) cin>>a[i];
+	buildtree(1,n,1);
+	for (register long long i=1;i<=m;i++)
+	{
+		cin>>x>>y>>z;
+		if (x==1) {cin>>num; update(1,y,z,num);}
+		else
+		if (x==2) cout<<Sum(y,z,1)<<endl;
+	}
+	return 0;
+} 
+第一次写博客，恭迎大佬斧正。
+
